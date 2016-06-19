@@ -48,6 +48,7 @@ public struct ResponseSerializer {
         switch response.body {
         case .buffer(let buffer):
             transport.send(buffer)
+            completion{}
         case .asyncReceiver(let receiver):
             receiver.receive(upTo: 2014) { result in
                 do {
