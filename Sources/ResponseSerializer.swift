@@ -22,12 +22,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-@_exported import S4
+public struct ResponseSerializer: AsyncResponseSerializer {
+    
+    let transport: AsyncStream
+    
+    public init(stream: AsyncStream) {
+        self.transport = stream
+    }
 
-public struct ResponseSerializer {
-    public init() {}
-
-    public func serialize(_ response: Response, to transport: AsyncStream, completion: ((Void) throws -> Void) -> Void = { _ in }){
+    public func serialize(_ response: Response, completion: @escaping ((Void) throws -> Void) -> Void = { _ in }){
         let newLine: Data = [13, 10]
 
         transport.send("HTTP/\(response.version.major).\(response.version.minor) \(response.status.statusCode) \(response.status.reasonPhrase)".data)
@@ -47,20 +50,20 @@ public struct ResponseSerializer {
 
         switch response.body {
         case .buffer(let buffer):
-            transport.send(buffer)
+            self.transport.send(buffer)
             completion{}
         case .asyncReceiver(let receiver):
             receiver.receive(upTo: 2014) { result in
                 do {
                     let data = try result()
-                    transport.send(String(data.count, radix: 16).data)
-                    transport.send(newLine)
-                    transport.send(data)
-                    transport.send(newLine)
+                    self.transport.send(String(data.count, radix: 16).data)
+                    self.transport.send(newLine)
+                    self.transport.send(data)
+                    self.transport.send(newLine)
                     if receiver.closed {
-                        transport.send("0".data)
-                        transport.send(newLine)
-                        transport.send(newLine)
+                        self.transport.send("0".data)
+                        self.transport.send(newLine)
+                        self.transport.send(newLine)
                         completion{}
                     }
                 } catch {
@@ -74,9 +77,9 @@ public struct ResponseSerializer {
             sender(body) { result in
                 do {
                     try result()
-                    transport.send("0".data)
-                    transport.send(newLine)
-                    transport.send(newLine)
+                    self.transport.send("0".data)
+                    self.transport.send(newLine)
+                    self.transport.send(newLine)
                     completion{}
                 } catch {
                   completion {

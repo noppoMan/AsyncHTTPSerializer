@@ -34,16 +34,16 @@ final class AsyncBodyStream: AsyncStream {
         closed = true
     }
 
-    func receive(upTo byteCount: Int, timingOut deadline: Double = .never, completion: ((Void) throws -> Data) -> Void = { _ in }) {
-        enum Error: ErrorProtocol {
+    func receive(upTo byteCount: Int, timingOut deadline: Double = .never, completion: @escaping ((Void) throws -> Data) -> Void = { _ in }) {
+        enum ReceivingError: Error {
             case receiveUnsupported
         }
         completion {
-            throw Error.receiveUnsupported
+            throw ReceivingError.receiveUnsupported
         }
     }
 
-    func send(_ data: Data, timingOut deadline: Double = .never, completion: ((Void) throws -> Void) -> Void = { _ in }) {
+    func send(_ data: Data, timingOut deadline: Double = .never, completion: @escaping ((Void) throws -> Void) -> Void = { _ in }) {
         if closed {
             completion {
                 throw StreamError.closedStream(data: data)
@@ -53,7 +53,7 @@ final class AsyncBodyStream: AsyncStream {
         transport.send(String(data.count, radix: 16).data+newLine+data+newLine, completion: completion)
     }
 
-    func flush(timingOut deadline: Double = .never, completion: ((Void) throws -> Void) -> Void) {
+    func flush(timingOut deadline: Double = .never, completion: @escaping ((Void) throws -> Void) -> Void) {
         transport.flush(completion: completion)
     }
 }
